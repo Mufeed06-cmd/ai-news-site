@@ -3,7 +3,7 @@ name: Daily AI News Agent
 on:
   schedule:
     - cron: '30 0 * * *'  # 6:00 AM IST = 00:30 UTC
-  workflow_dispatch:        # allows manual trigger too
+  workflow_dispatch:
 
 jobs:
   run-agent:
@@ -11,10 +11,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
