@@ -1,10 +1,7 @@
-import requests
-from bs4 import BeautifulSoup
-
-# Your API keys
-GROQ_API_KEY = "your_groq_api_key_here"
-SUPABASE_URL = "your_supabase_url_here"
-SUPABASE_KEY = "your_supabase_anon_key_here"
+import os
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 def summarize_with_groq(title):
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
