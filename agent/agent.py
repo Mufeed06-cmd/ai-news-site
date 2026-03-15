@@ -17,6 +17,7 @@ def summarize_with_groq(title):
     req = urllib.request.Request(url, data=payload)
     req.add_header("Authorization", "Bearer " + GROQ_API_KEY)
     req.add_header("Content-Type", "application/json")
+    req.add_header("User-Agent", "Mozilla/5.0")
     
     with urllib.request.urlopen(req) as response:
         result = json.loads(response.read().decode("utf-8"))
