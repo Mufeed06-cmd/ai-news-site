@@ -28,6 +28,15 @@ def summarize_with_groq(title):
         result = json.loads(response.read().decode("utf-8"))
     return result["choices"][0]["message"]["content"]
 
+def already_exists(title):
+    url = SUPABASE_URL + "/rest/v1/posts?title=eq." + urllib.parse.quote(title) + "&select=id"
+    req = urllib.request.Request(url, method="GET")
+    req.add_header("apikey", SUPABASE_KEY)
+    req.add_header("Authorization", "Bearer " + SUPABASE_KEY)
+    with urllib.request.urlopen(req) as response:
+        result = json.loads(response.read().decode("utf-8"))
+    return len(result) > 0
+
 def save_to_supabase(title, summary, source, source_url):
     url = SUPABASE_URL + "/rest/v1/posts"
     payload = json.dumps({
@@ -70,6 +79,9 @@ def run():
     ]
 
     for article in articles:
+        if already_exists(article["title"]):
+            print("Already exists, skipping: " + article["title"])
+            continue
         print("Processing: " + article["title"])
         summary = summarize_with_groq(article["title"])
         save_to_supabase(
