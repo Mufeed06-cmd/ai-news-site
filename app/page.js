@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 
+export const revalidate = 0
+
 export default async function Home() {
   const { data: posts } = await supabase
     .from('posts')
