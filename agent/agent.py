@@ -5,7 +5,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 def summarize_with_groq(title):
     headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Authorization": f"Bearer {str(GROQ_API_KEY)}",
         "Content-Type": "application/json"
     }
     data = {
@@ -26,8 +26,8 @@ def summarize_with_groq(title):
 
 def save_to_supabase(title, summary, source, source_url):
     headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "apikey": str(SUPABASE_KEY),
+"Authorization": f"Bearer {str(SUPABASE_KEY)}",
         "Content-Type": "application/json",
         "Prefer": "return=minimal"
     }
