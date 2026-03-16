@@ -3,6 +3,9 @@ import urllib.request
 import urllib.parse
 import json
 from html.parser import HTMLParser
+from dotenv import load_dotenv
+
+load_dotenv()
 
 GROQ_API_KEY = str(os.environ.get("GROQ_API_KEY", "")).strip()
 SUPABASE_URL = str(os.environ.get("SUPABASE_URL", "")).strip()
@@ -50,7 +53,7 @@ def scrape_anthropic():
         for link in parser.links:
             href = link["href"]
             title = link["title"].replace("\n", " ").strip()
-            if "/news/" in href and len(title) > 15:
+            if "/news/" in href and len(title) > 15 and len(title) < 100:
                 full_url = "https://www.anthropic.com" + href if href.startswith("/") else href
                 articles.append({
                     "title": title,
