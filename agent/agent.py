@@ -2,10 +2,90 @@ import os
 import urllib.request
 import urllib.parse
 import json
+from html.parser import HTMLParser
 
 GROQ_API_KEY = str(os.environ.get("GROQ_API_KEY", "")).strip()
 SUPABASE_URL = str(os.environ.get("SUPABASE_URL", "")).strip()
 SUPABASE_KEY = str(os.environ.get("SUPABASE_KEY", "")).strip()
+
+class LinkParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.links = []
+        self.current_text = ""
+        self.in_anchor = False
+        self.current_href = ""
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            self.in_anchor = True
+            self.current_text = ""
+            for attr in attrs:
+                if attr[0] == "href":
+                    self.current_href = attr[1]
+
+    def handle_data(self, data):
+        if self.in_anchor:
+            self.current_text += data.strip()
+
+    def handle_endtag(self, tag):
+        if tag == "a":
+            self.in_anchor = False
+            if self.current_text and len(self.current_text) > 20:
+                self.links.append({
+                    "title": self.current_text,
+                    "href": self.current_href
+                })
+
+def scrape_anthropic():
+    url = "https://www.anthropic.com/news"
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            html = response.read().decode("utf-8")
+        parser = LinkParser()
+        parser.feed(html)
+        articles = []
+        for link in parser.links:
+            href = link["href"]
+            title = link["title"].replace("\n", " ").strip()
+            if "/news/" in href and len(title) > 15:
+                full_url = "https://www.anthropic.com" + href if href.startswith("/") else href
+                articles.append({
+                    "title": title,
+                    "url": full_url,
+                    "source": "Anthropic"
+                })
+        return articles[:3]
+    except Exception as e:
+        print("Scrape error: " + str(e))
+        return []
+
+def scrape_huggingface():
+    url = "https://huggingface.co/blog"
+    req = urllib.request.Request(url)
+    req.add_header("User-Agent", "Mozilla/5.0")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as response:
+            html = response.read().decode("utf-8")
+        parser = LinkParser()
+        parser.feed(html)
+        articles = []
+        for link in parser.links:
+            href = link["href"]
+            title = link["title"].replace("\n", " ").strip()
+            if "/blog/" in href and len(title) > 15:
+                full_url = "https://huggingface.co" + href if href.startswith("/") else href
+                articles.append({
+                    "title": title,
+                    "url": full_url,
+                    "source": "HuggingFace"
+                })
+        return articles[:3]
+    except Exception as e:
+        print("Scrape error: " + str(e))
+        return []
 
 def summarize_with_groq(title):
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -60,27 +140,17 @@ def save_to_supabase(title, summary, source, source_url):
         print("Error saving: " + str(e))
 
 def run():
-    articles = [
-        {
-            "title": "Claude 3.5 Sonnet: Anthropic Most Intelligent Model",
-            "url": "https://www.anthropic.com/news/claude-3-5-sonnet",
-            "source": "Anthropic"
-        },
-        {
-            "title": "OpenAI releases GPT-4o with vision and voice",
-            "url": "https://openai.com/blog/gpt-4o",
-            "source": "OpenAI"
-        },
-        {
-            "title": "Google DeepMind introduces Gemini 2.0",
-            "url": "https://deepmind.google/discover/blog",
-            "source": "Google DeepMind"
-        }
-    ]
+    print("Scraping Anthropic...")
+    anthropic_articles = scrape_anthropic()
+    print("Scraping HuggingFace...")
+    hf_articles = scrape_huggingface()
 
-    for article in articles:
+    all_articles = anthropic_articles + hf_articles
+    print("Found " + str(len(all_articles)) + " articles")
+
+    for article in all_articles:
         if already_exists(article["title"]):
-            print("Already exists, skipping: " + article["title"])
+            print("Skipping: " + article["title"])
             continue
         print("Processing: " + article["title"])
         summary = summarize_with_groq(article["title"])
